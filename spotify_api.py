@@ -1,8 +1,10 @@
 import requests
-import pprint
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
-ACCESS_TOKEN = 'BQAeeZCv5wGKFjjbxLwC44wE4qSjWSIFTdjeS4oIhajyqcI3YUVHjSmbZKzFTfhyZEGdImoRQQsQr9dzI0_-S1ppMZ9IJ484ansqmAV1Gik8xqvBDbnIWnIoHAGv2X20N0xR1_37A0hiJVpfcFO8gLE'
-root_url = "https://api.spotify.com/v1/me/top/"
+
+ACCESS_TOKEN = 'BQCe3M8bGIQZQ0DJnFB8FZpP-uLxRYfncOy7MaOM72-rQ-5gscYT7ySvs_4lz_n4TLfkCSztjF_HGKE68c5taTRNpAUVz_lLIv-U1QJccnE4P2wWVI8IEgjX8Kkm8s50A6XIG44isTp90Wj-1-hQxes'
+root_url = "https://api.spotify.com/v1/me/top/artists"
 
 def find_top_songs():
     response = requests.post(
@@ -11,12 +13,12 @@ def find_top_songs():
             "Authorization": f'Bearer {ACCESS_TOKEN}'
         },
         json = {
-            "type" : "artists",
             "time_range": "medium_term",
-            "limit": "1"
+            "limit": "1",
+            "offset": '0'
         }
     )
-    json_resp = response.json()
+    json_resp = response
     print(json_resp)
 
 find_top_songs()
