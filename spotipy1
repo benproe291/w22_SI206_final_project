@@ -1,0 +1,8 @@
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+sp = spotipy.Spotify()
+
+auth_token = "BQCr5ngaxSHjIhud-a-5lTbGPbfyhmYOGCU_bbuSXl50PdToQP1h97rOBUBWE9l4R2NsjokGfFDZ5Hp-HagW2UknpubKBwURQBrKAMg7H56vUerJpYfreCeEf2OKISx62X6FHkRl-3GR8zuHxLp92PQ"
+spotipy.client.Spotify(auth=auth_token)
+
+sp.current_user_top_artists(20,0,'medium_term')
