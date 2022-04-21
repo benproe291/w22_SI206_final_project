@@ -10,10 +10,9 @@ import os
 ACCESS_TOKEN = 'BQCvEyNAX4WwnDf1W5j1SSKQHiTJmH8eHREyH1VOX2cX1rLzJRZxhDqrcUHPO8no4QN1A6zak-dP5SFWkl8u5TOpkju48saQ4C2lT830OMDEQPJKzdImz_KB6kbO8mtC3Fx3k8eK_2ToQDwGQRWl5Ok'
 root_url = "https://api.spotify.com/v1/me/top/artists?"
 
-def find_top_songs():
-    tr = "long_term"
-    lm = "35"
-    offset = '0'
+def find_top_songs(offset):
+    tr = "medium_term"
+    lm = "20"
     response = requests.get(
         f'https://api.spotify.com/v1/me/top/artists?time_range={tr}&limit={lm}&offset={offset}',
         headers = {
@@ -32,13 +31,10 @@ def setUpDatabase(db_name):
     cur = conn.cursor()
     return cur, conn
 
-def create_top_artists(cur, conn):
-    cur.execute("DROP TABLE IF EXISTS top_artists")
-    conn.commit()
+def create_top_artists(cur, conn, offset):
     cur.execute('CREATE TABLE top_artists (artist_id INTEGER PRIMARY KEY, name TEXT, genre1 TEXT, genre2 TEXT)')
     conn.commit()
-
-    data = find_top_songs()
+    data = find_top_songs(offset)
     pprint.pprint(data['items'])
     artist_id = 1
     for item in data['items']:
@@ -57,5 +53,9 @@ def create_top_artists(cur, conn):
     conn.commit()
 
 
-cur, conn = setUpDatabase("artists")
-create_top_artists(cur, conn)
+cur, conn = setUpDatabase("top_artists_concerts")
+create_top_artists(cur, conn, 0)
+create_top_artists(cur, conn, 20)
+create_top_artists(cur, conn, 40)
+#create_top_artists(cur, conn, 60)
+#create_top_artists(cur, conn, 800)
