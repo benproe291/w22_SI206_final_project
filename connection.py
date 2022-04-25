@@ -55,7 +55,7 @@ def create_top_artists(cur, conn, offset):
     conn.commit()
 
 def find_events(cur, conn):
-    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT)')
+    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id INTEGER PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, city TEXT, venue TEXT)')
     conn.commit()
     events = []
 
@@ -66,9 +66,15 @@ def find_events(cur, conn):
         # filtered data, now data is a list of events
         url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
         data = requests.get(url).json()
-        data = data["_embedded"]["events"]
-        events += data
 
+        pprint.pprint(data)
+        try:
+            limit_data = data["_embedded"]["events"]
+            events += limit_data
+        except:
+            continue
+
+        
     return events
 
 
@@ -78,20 +84,20 @@ def create_events(cur, conn):
     events = find_events(cur, conn)
 
     for event in events:
-        event_id = event["id"]
-        event_name = event["name"]
-        genre = event["classifications"][0]["genre"]["name"]
-        date = event["dates"]["start"]["localDate"]
-        cur.execute("INSERT INTO events (event_id, event_name, genre, date) VALUES (?,?,?,?)", (event_id, event_name, genre, date))
-
-    conn.commit()
-
-
-cur, conn = setUpDatabase("top_artists_concerts")
-create_events(cur, conn)
-
+        try:
+            event_id = event["id"]
+            event_name = event["name"]
+            genre = event["classifications"][0]["genre"]["name"]
+            date = event["dates"]["start"]["localDate"]
+            city = event['venues']['city']['name']
+            venue_name = event['venues']['name']
+            cur.execute("INSERT INTO events (event_name, genre, date, city, venue) VALUES (?,?,?,?,?)", (event_name, genre, date, city, venue_name))
+            conn.commit()
+        except:
+           continue
 
 cur, conn = setUpDatabase("top_artists_concerts")
 create_top_artists(cur, conn, 0)
-create_top_artists(cur, conn, 20)
-create_top_artists(cur, conn, 40)
+#create_top_artists(cur, conn, 20)
+#create_top_artists(cur, conn, 40)
+create_events(cur, conn)
