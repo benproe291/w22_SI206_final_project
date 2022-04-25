@@ -17,13 +17,14 @@ def find_events(cur, conn):
     events = []
 
     artists = cur.execute("SELECT name from top_artists")
+
     for a in artists:
         name = a[0]
 
         # filtered data, now data is a list of events
         url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
         data = requests.get(url).json()
-        data = data["_embedded"]["events"]
+        data = data["_embedded"]["events"][:20]
         events += data
 
     return events
