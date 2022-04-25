@@ -12,18 +12,27 @@ def setUpDatabase(db_name):
     return cur, conn
 
 
-def find_events(artist, genre="", countryCode="US"):
-    # filtered data, now data is a list of events
-    url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&classificatioName={}&countryCode={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(artist, genre, countryCode)
-    data = requests.get(url).json()
-    data = data["_embedded"]["events"]
-    return data
+def find_events(cur, conn):
+
+    events = []
+
+    artists = cur.execute("SELECT name from top_artists")
+    for a in artists:
+        name = a[0]
+
+        # filtered data, now data is a list of events
+        url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
+        data = requests.get(url).json()
+        data = data["_embedded"]["events"]
+        events += data
+
+    return events
 
 
-def create_events(cur, conn, artist, genre="", countryCode="US"):
+def create_events(cur, conn):
 
     # find events
-    events = find_events(artist)
+    events = find_events(cur, conn)
 
     for event in events:
         event_id = event["id"]
@@ -36,8 +45,7 @@ def create_events(cur, conn, artist, genre="", countryCode="US"):
 
 
 cur, conn = setUpDatabase("top_artists_concerts")
-artist = "Dababy"
-create_events(cur, conn, artist)
+create_events(cur, conn)
 
 
 
