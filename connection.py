@@ -7,7 +7,7 @@ import sqlite3
 import json
 import os
 
-ACCESS_TOKEN = 'BQDA8IxmLAL5Q6ZXiY2aYPr7p_fbJ0iBtDwYrcqZpB0_plFe9J-DlgSit2Zl1MlvBwkvMgy6NlALXmdRwAo7ri92jxOnP6Mo7V_GVJlNbOVK0V4CFq6yJ0GY4fj1uH119oaGYtv3fsqwnUzIZP2uUVM'
+ACCESS_TOKEN = 'BQCK3w5tdw10ad75c5R36Xz0iMqg1bWNFD0i3m4U__QYJj8m6LzyFuq-RKqdfl5H4upWmUBgEk6K6J5mn3RfrHU-Gp2SQrgbJpxXyvy17UFuh03suMkIo070FR_TH30MhgTTfFmOu6Pi0OzIhH4EwD4'
 root_url = "https://api.spotify.com/v1/me/top/artists?"
 
 def find_top_songs(offset):
@@ -37,7 +37,6 @@ def create_top_artists(cur, conn, offset):
     cur.execute('CREATE TABLE IF NOT EXISTS top_artists (artist_id INTEGER PRIMARY KEY, name TEXT, genre1 TEXT, genre2 TEXT)')
     conn.commit()
     data = find_top_songs(offset)
-    pprint.pprint(data['items'])
     artist_id = 1
     for item in data['items']:
         artist_id += 1
@@ -55,7 +54,7 @@ def create_top_artists(cur, conn, offset):
     conn.commit()
 
 def find_events(cur, conn):
-    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id INTEGER PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, city TEXT, venue TEXT)')
+    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, venue TEXT, city TEXT)')
     conn.commit()
     events = []
 
@@ -67,9 +66,9 @@ def find_events(cur, conn):
         url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
         data = requests.get(url).json()
 
-        pprint.pprint(data)
+        #pprint.pprint(data)
         try:
-            limit_data = data["_embedded"]["events"]
+            limit_data = data["_embedded"]["events"][:20]
             events += limit_data
         except:
             continue
@@ -81,6 +80,7 @@ def find_events(cur, conn):
 def create_events(cur, conn):
 
     # find events
+    print('please wait... fetching event results')
     events = find_events(cur, conn)
 
     for event in events:
@@ -89,15 +89,15 @@ def create_events(cur, conn):
             event_name = event["name"]
             genre = event["classifications"][0]["genre"]["name"]
             date = event["dates"]["start"]["localDate"]
-            city = event['venues']['city']['name']
-            venue_name = event['venues']['name']
-            cur.execute("INSERT INTO events (event_name, genre, date, city, venue) VALUES (?,?,?,?,?)", (event_name, genre, date, city, venue_name))
+            venue_name = event['_embedded']['venues'][0]['name']
+            city = event['_embedded']['venues'][0]['city']['name']
+            cur.execute("INSERT INTO events (event_id, event_name, genre, date, venue, city) VALUES (?,?,?,?,?,?)", (event_id, event_name, genre, date, venue_name, city))
             conn.commit()
         except:
            continue
 
 cur, conn = setUpDatabase("top_artists_concerts")
 create_top_artists(cur, conn, 0)
-#create_top_artists(cur, conn, 20)
-#create_top_artists(cur, conn, 40)
+create_top_artists(cur, conn, 20)
+create_top_artists(cur, conn, 40)
 create_events(cur, conn)

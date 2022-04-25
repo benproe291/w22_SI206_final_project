@@ -54,41 +54,7 @@ def create_top_artists(cur, conn, offset):
         print(artist, genre1, genre2)
     conn.commit()
 
-def find_events(cur, conn):
-    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT)')
-    conn.commit()
-    events = []
 
-    artists = cur.execute("SELECT name from top_artists")
-    for a in artists:
-        name = a[0]
-
-        # filtered data, now data is a list of events
-        url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
-        data = requests.get(url).json()
-        data = data["_embedded"]["events"]
-        events += data
-
-    return events
-
-
-def create_events(cur, conn):
-
-    # find events
-    events = find_events(cur, conn)
-
-    for event in events:
-        event_id = event["id"]
-        event_name = event["name"]
-        genre = event["classifications"][0]["genre"]["name"]
-        date = event["dates"]["start"]["localDate"]
-        cur.execute("INSERT INTO events (event_id, event_name, genre, date) VALUES (?,?,?,?)", (event_id, event_name, genre, date))
-
-    conn.commit()
-
-
-cur, conn = setUpDatabase("top_artists_concerts")
-create_events(cur, conn)
 
 
 cur, conn = setUpDatabase("top_artists_concerts")
