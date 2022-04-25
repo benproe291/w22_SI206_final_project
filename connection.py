@@ -1,29 +1,28 @@
 import requests
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 import pprint
 
 import sqlite3
 import json
 import os
 
-ACCESS_TOKEN = 'BQCK3w5tdw10ad75c5R36Xz0iMqg1bWNFD0i3m4U__QYJj8m6LzyFuq-RKqdfl5H4upWmUBgEk6K6J5mn3RfrHU-Gp2SQrgbJpxXyvy17UFuh03suMkIo070FR_TH30MhgTTfFmOu6Pi0OzIhH4EwD4'
-root_url = "https://api.spotify.com/v1/me/top/artists?"
+import matplotlib.pyplot as plt
 
-def find_top_songs(offset):
-    tr = "medium_term"
-    lm = "20"
-    response = requests.get(
-        f'https://api.spotify.com/v1/me/top/artists?time_range={tr}&limit={lm}&offset={offset}',
-        headers = {
-            "Accept": f'application/json',
-            "Content-Type": f'application/json',
-            "Authorization": f'Bearer {ACCESS_TOKEN}'
-        }
-    )
-    jsn = response.json()
+
+def find_top_songs(off):
+    scope = 'user-top-read'
+    ranges = ['short_term', 'medium_term', 'long_term']
+
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
+
+    for sp_range in ['short_term']:
+        results = sp.current_user_top_artists(time_range=sp_range, limit=20, offset= off)
+        pprint.pprint(results)
+
     #pprint.pprint(jsn['items'])
-    return jsn
+    return results
 
 def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +37,7 @@ def create_top_artists(cur, conn, offset):
     conn.commit()
     data = find_top_songs(offset)
     artist_id = 1
+    print(f'fetching top artists from Spotify, offset = {offset}')
     for item in data['items']:
         artist_id += 1
         artist = item['name']
@@ -50,7 +50,7 @@ def create_top_artists(cur, conn, offset):
         except:
             genre2 = "null"
         cur.execute("INSERT INTO top_artists (name, genre1, genre2) VALUES (?,?,?)", (artist, genre1, genre2))
-        print(artist, genre1, genre2)
+        #print(artist, genre1, genre2)
     conn.commit()
 
 def find_events(cur, conn):
@@ -61,12 +61,12 @@ def find_events(cur, conn):
     artists = cur.execute("SELECT name from top_artists")
     for a in artists:
         name = a[0]
-
+        print(f'retrieving <= 20 event results from Ticketmaster, search term = {a}')
         # filtered data, now data is a list of events
         url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
         data = requests.get(url).json()
 
-        #pprint.pprint(data)
+        pprint.pprint(data)
         try:
             limit_data = data["_embedded"]["events"][:20]
             events += limit_data
@@ -95,9 +95,15 @@ def create_events(cur, conn):
             conn.commit()
         except:
            continue
+    print(f"task complete, please view 'top_artists_concerts.db")
 
-cur, conn = setUpDatabase("top_artists_concerts")
+def viz_one():
+    pass
+
+
+cur, conn = setUpDatabase("top_artists_concerts.db")
 create_top_artists(cur, conn, 0)
-create_top_artists(cur, conn, 20)
+'''create_top_artists(cur, conn, 20)
 create_top_artists(cur, conn, 40)
 create_events(cur, conn)
+viz_one()'''
