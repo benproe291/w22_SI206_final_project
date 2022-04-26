@@ -117,7 +117,7 @@ def create_events(cur, conn):
            continue
     print(f"task complete, please view 'top_artists_concerts.db")
 
-def viz_one():
+def viz_one(cur, conn):
     state_count = cur.execute('''
         SELECT DISTINCT venue.state, count(*) as count
         FROM venue
@@ -136,14 +136,29 @@ def viz_one():
     plt.tight_layout()
     plt.show()
 
+def viz_two(cur, conn):
+    genre1_count = cur.execute(
+        '''SELECT DISTINCT top_artists.genre1, count(*) as count
+           FROM top_artists
+           GROUP BY top_artists.genre1'''
+    )
+    x_list = []
+    y_list = []
+    for i in genre1_count:
+        x_list.append(i[0])
+        y_list.append(i[1])
+    plt.pie(y_list, labels=x_list)
+    plt.title("Pie Chart of the Primary Genre of your Top Artists from the last 6 months")
+    plt.show()
     pass
 
 
-cur, conn = setUpDatabase("top_artists_concerts.db")
+cur, conn = setUpDatabase("attempt2.db")
 
-#create_top_artists(cur, conn, 0)
-#create_top_artists(cur, conn, 20)
-#create_top_artists(cur, conn, 40)
-#create_venue(cur, conn)
-#create_events(cur, conn)
-viz_one()
+create_top_artists(cur, conn, 0)
+create_top_artists(cur, conn, 20)
+create_top_artists(cur, conn, 40)
+create_venue(cur, conn)
+create_events(cur, conn)
+viz_one(cur, conn)
+#viz_two(cur, conn)
