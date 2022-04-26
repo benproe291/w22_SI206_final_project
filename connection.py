@@ -9,7 +9,7 @@ import json
 import os
 
 import matplotlib.pyplot as plt
-import plotly as pltly
+import plotly.express as pltly
 
 
 def find_top_songs(off):
@@ -18,7 +18,7 @@ def find_top_songs(off):
 
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-    for sp_range in ['short_term']:
+    for sp_range in ['medium_term']:
         results = sp.current_user_top_artists(time_range=sp_range, limit=20, offset= off)
         #pprint.pprint(results)
 
@@ -57,8 +57,7 @@ def create_top_artists(cur, conn, offset):
 def find_events(cur, conn):
     cur.execute('CREATE TABLE IF NOT EXISTS venue (venue_id TEXT PRIMARY KEY, venue_name TEXT, venue_lat NUMBER, venue_log NUMBER, city TEXT, state TEXT)')
     conn.commit()
-    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, venue_id TEXT)')
-    conn.commit()
+    
     events = []
 
     artists = cur.execute("SELECT name from top_artists")
@@ -102,6 +101,8 @@ def create_events(cur, conn):
     # find events
     print('please wait... fetching event results')
     events = find_events(cur, conn)
+    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, venue_id TEXT)')
+    conn.commit()
 
     for event in events:
         try:
@@ -110,20 +111,39 @@ def create_events(cur, conn):
             genre = event["classifications"][0]["genre"]["name"]
             date = event["dates"]["start"]["localDate"]
             venue_id = event['_embedded']['venues'][0]['id']
-            cur.execute("INSERT INTO events (event_id, event_name, genre, date, venue_id) VALUES (?,?,?,?,?,?,?)", (event_id, event_name, genre, date, venue_id))
+            cur.execute("INSERT INTO events (event_id, event_name, genre, date, venue_id) VALUES (?,?,?,?,?)", (event_id, event_name, genre, date, venue_id))
             conn.commit()
         except:
            continue
     print(f"task complete, please view 'top_artists_concerts.db")
 
 def viz_one():
+    state_count = cur.execute('''
+        SELECT DISTINCT venue.state, count(*) as count
+        FROM venue
+        JOIN events
+        ON venue.venue_id = events.venue_id
+        GROUP BY venue.state''').fetchall()
+    x_list = []
+    y_list = []
+    for i in state_count:
+        x_list.append(i[0])
+        y_list.append(i[1])
+    plt.barh(x_list, y_list)
+    plt.xlabel('Number of Shows/Events')
+    plt.ylabel("State")
+    plt.title("Number of Shows/Events by State")
+    plt.tight_layout()
+    plt.show()
 
     pass
 
 
 cur, conn = setUpDatabase("top_artists_concerts.db")
+
 #create_top_artists(cur, conn, 0)
 #create_top_artists(cur, conn, 20)
 #create_top_artists(cur, conn, 40)
-create_venue(cur, conn)
+#create_venue(cur, conn)
+#create_events(cur, conn)
 viz_one()
