@@ -1,14 +1,15 @@
-import requests
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 import pprint
+import requests
 
 import sqlite3
 import json
 import os
 
 import matplotlib.pyplot as plt
+import plotly as pltly
 
 
 def find_top_songs(off):
@@ -19,7 +20,7 @@ def find_top_songs(off):
 
     for sp_range in ['short_term']:
         results = sp.current_user_top_artists(time_range=sp_range, limit=20, offset= off)
-        pprint.pprint(results)
+        #pprint.pprint(results)
 
     #pprint.pprint(jsn['items'])
     return results
@@ -54,7 +55,9 @@ def create_top_artists(cur, conn, offset):
     conn.commit()
 
 def find_events(cur, conn):
-    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, venue TEXT, city TEXT)')
+    cur.execute('CREATE TABLE IF NOT EXISTS venue (venue_id TEXT PRIMARY KEY, venue_name TEXT, venue_lat NUMBER, venue_log NUMBER, city TEXT, state TEXT)')
+    conn.commit()
+    cur.execute('CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, event_name TEXT, genre TEXT, date TEXT, venue_id TEXT)')
     conn.commit()
     events = []
 
@@ -66,19 +69,36 @@ def find_events(cur, conn):
         url = "https://app.ticketmaster.com/discovery/v2/events.json?keyword={}&apikey=F429VW6ixtsWtGtKWzffWwfzDcO9Ad8x".format(name)
         data = requests.get(url).json()
 
-        pprint.pprint(data)
+        #pprint.pprint(data)
         try:
             limit_data = data["_embedded"]["events"][:20]
             events += limit_data
         except:
             continue
-
         
     return events
 
+def create_venue(cur, conn):
+ 
+    print('please wait... fetching venue list')
+    venues = find_events(cur, conn)
+    for venue in venues:
+        try:
+            venue_id = venue['_embedded']['venues'][0]['id']
+            venue_name = venue['_embedded']['venues'][0]['name']
+            venue_lat = venue['_embedded']['venues'][0]['location']['latitude']
+            venue_log = venue['_embedded']['venues'][0]['location']['longitude']
+            city = venue['_embedded']['venues'][0]['city']['name']
+            state = venue['_embedded']['venues'][0]['state']['name']
+            cur.execute("INSERT INTO venue (venue_id, venue_name, venue_lat, venue_log, city, state) VALUES (?,?,?,?,?,?)", (venue_id, venue_name, venue_lat, venue_log, city, state))
+            conn.commit()
+        except:
+            continue
+
+
 
 def create_events(cur, conn):
-
+    
     # find events
     print('please wait... fetching event results')
     events = find_events(cur, conn)
@@ -89,21 +109,21 @@ def create_events(cur, conn):
             event_name = event["name"]
             genre = event["classifications"][0]["genre"]["name"]
             date = event["dates"]["start"]["localDate"]
-            venue_name = event['_embedded']['venues'][0]['name']
-            city = event['_embedded']['venues'][0]['city']['name']
-            cur.execute("INSERT INTO events (event_id, event_name, genre, date, venue, city) VALUES (?,?,?,?,?,?)", (event_id, event_name, genre, date, venue_name, city))
+            venue_id = event['_embedded']['venues'][0]['id']
+            cur.execute("INSERT INTO events (event_id, event_name, genre, date, venue_id) VALUES (?,?,?,?,?,?,?)", (event_id, event_name, genre, date, venue_id))
             conn.commit()
         except:
            continue
     print(f"task complete, please view 'top_artists_concerts.db")
 
 def viz_one():
+
     pass
 
 
 cur, conn = setUpDatabase("top_artists_concerts.db")
-create_top_artists(cur, conn, 0)
-'''create_top_artists(cur, conn, 20)
-create_top_artists(cur, conn, 40)
-create_events(cur, conn)
-viz_one()'''
+#create_top_artists(cur, conn, 0)
+#create_top_artists(cur, conn, 20)
+#create_top_artists(cur, conn, 40)
+create_venue(cur, conn)
+viz_one()
