@@ -1,1 +1,3 @@
 # w22_SI206_final_project
+This project was an effort to combine the final aspects of my first in-depth Python course. The goal of this program was to allow students to connect their Spotify accounts and choose a scope in the amount of time they would like to analyze their activity for. Once the user has signed in using the default Spotify OAuth API.
+From the information that is collected on Spotify, a call will be made the Ticketmaster and Live Nation to check for concerts and events that are assoicated with the artists that it finds from Spotify. If there are less than (15) responses for events, then the API will look for similar artists and return possible new concerts and events to attend.
